@@ -38,3 +38,9 @@ services:
 - The time window in seconds to which the limit applies: `dockerhub_pull_limit_window_seconds`
 - The time window in seconds to which the remaining pulls apply: `dockerhub_pull_remaining_window_seconds`
 - Exporter errors: `dockerhub_pull_errors_total`
+
+## Grafana Dashboard
+
+Either import the JSON file from `grafana/` or use the following link to import it directly into Grafana: https://grafana.com/grafana/dashboards/23342-dockerhub-pull-limits/
+
+![Grafana Dashboard](./grafana/screenshot.png)
