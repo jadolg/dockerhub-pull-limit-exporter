@@ -16,7 +16,7 @@ Create a `config.yaml` file. Feel free to copy from `config.example.yaml` and mo
 docker run --rm \
   -v $PWD/config.yaml:/config.yaml \
   -p 9101:9101 \
-  -it ghcr.io/jadolg/dockerhub-pull-limit-exporter:v1.0.0
+  -it ghcr.io/jadolg/dockerhub-pull-limit-exporter
 ```
 
 #### Using Docker Compose
