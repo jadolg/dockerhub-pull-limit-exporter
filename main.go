@@ -51,28 +51,22 @@ func main() {
 			"username": credential.Username,
 		}).Info("Starting metrics collector")
 		ticker := time.NewTicker(config.UpdateInterval)
-		done := make(chan bool)
 
 		go func() {
-			for {
-				select {
-				case <-done:
-					return
-				case <-ticker.C:
+			for ; true; <-ticker.C {
+				log.WithFields(log.Fields{
+					"username": credential.Username,
+				}).Debug("Collecting metrics")
+				err := collectMetrics(credential, config.Timeout)
+				if err != nil {
 					log.WithFields(log.Fields{
 						"username": credential.Username,
-					}).Debug("Collecting metrics")
-					err := collectMetrics(credential, config.Timeout)
-					if err != nil {
-						log.WithFields(log.Fields{
-							"username": credential.Username,
-						}).Error(err)
-						errorsCount.WithLabelValues(credential.Username).Inc()
-					} else {
-						log.WithFields(log.Fields{
-							"username": credential.Username,
-						}).Debug("Successfully collected metrics")
-					}
+					}).Error(err)
+					errorsCount.WithLabelValues(credential.Username).Inc()
+				} else {
+					log.WithFields(log.Fields{
+						"username": credential.Username,
+					}).Debug("Successfully collected metrics")
 				}
 			}
 		}()
