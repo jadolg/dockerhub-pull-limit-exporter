@@ -1,0 +1,8 @@
+update_interval: 5m
+timeout: 20s
+
+credentials:
+  - username: user1
+    password: password1
+  - username: user2
+    password: password2
