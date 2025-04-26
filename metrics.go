@@ -40,7 +40,7 @@ var (
 		},
 		[]string{"account", "source"},
 	)
-	errors = promauto.NewCounterVec(
+	errorsCount = promauto.NewCounterVec(
 		prometheus.CounterOpts{
 			Name: fmt.Sprintf("%serrors_total", prefix),
 			Help: "Exporter errors",

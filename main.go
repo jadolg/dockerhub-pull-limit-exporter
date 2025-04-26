@@ -67,7 +67,7 @@ func main() {
 						log.WithFields(log.Fields{
 							"username": credential.Username,
 						}).Error(err)
-						errors.WithLabelValues(credential.Username).Inc()
+						errorsCount.WithLabelValues(credential.Username).Inc()
 					} else {
 						log.WithFields(log.Fields{
 							"username": credential.Username,
