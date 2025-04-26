@@ -48,7 +48,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: |
-            ghcr.io/riskident/image-availability-exporter
+            ghcr.io/jadolg/dockerhub-pull-limit-exporter
           tags: |
             type=semver,pattern=v{{version}}
             type=semver,pattern=v{{major}}.{{minor}}
