@@ -61,7 +61,8 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
           build-args: |
-            VERSION=${{ github.ref_name }}, COMMIT=${{ github.sha }}
+            VERSION=${{ github.ref_name }}
+            COMMIT=${{ github.sha }}
           push: true
           cache-from: type=gha
           cache-to: type=gha,mode=max
