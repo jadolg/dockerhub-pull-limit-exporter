@@ -44,3 +44,25 @@ services:
 Either import the JSON file from `grafana/` or use the following link to import it directly into Grafana: https://grafana.com/grafana/dashboards/23342-dockerhub-pull-limits/
 
 ![Grafana Dashboard](./grafana/screenshot.png)
+
+## Example alerts
+
+```yaml
+groups:
+  - name: DockerHubPullLimits
+    rules:
+      - alert: DockerHubPullsRemainingLow
+        expr: dockerhub_pull_remaining_total/dockerhub_pull_limit_total * 100 < 10 
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Account {{ $labels.account }} has used 90% of its pull limit"
+      - alert: DockerHubPullsRemainingLowCritical
+        expr: dockerhub_pull_remaining_total < 1
+        for: 5m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Account {{ $labels.account }} has used 100% of its pull limit"
+```
