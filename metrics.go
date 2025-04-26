@@ -15,14 +15,14 @@ var (
 	pullLimit = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: fmt.Sprintf("%slimit_total", prefix),
-			Help: "The rate limit for Docker Hub pulls",
+			Help: "The rate limit for DockerHub pulls",
 		},
 		[]string{"account", "source"},
 	)
 	pullRemaining = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: fmt.Sprintf("%sremaining_total", prefix),
-			Help: "The remaining pulls for Docker Hub",
+			Help: "The remaining DockerHub pulls",
 		},
 		[]string{"account", "source"},
 	)
@@ -36,7 +36,7 @@ var (
 	remainingWindowSeconds = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
 			Name: fmt.Sprintf("%sremaining_window_seconds", prefix),
-			Help: "The time window in seconds to which the remaining pulls applies",
+			Help: "The time window in seconds to which the remaining pulls apply",
 		},
 		[]string{"account", "source"},
 	)
