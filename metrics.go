@@ -14,14 +14,14 @@ const prefix = "dockerhub_pull_"
 var (
 	pullLimit = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: fmt.Sprintf("%slimit", prefix),
+			Name: fmt.Sprintf("%slimit_total", prefix),
 			Help: "The rate limit for Docker Hub pulls",
 		},
 		[]string{"account", "source"},
 	)
 	pullRemaining = promauto.NewGaugeVec(
 		prometheus.GaugeOpts{
-			Name: fmt.Sprintf("%sremaining", prefix),
+			Name: fmt.Sprintf("%sremaining_total", prefix),
 			Help: "The remaining pulls for Docker Hub",
 		},
 		[]string{"account", "source"},
