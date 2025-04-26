@@ -32,9 +32,9 @@ func main() {
 	}
 
 	log.WithFields(log.Fields{
-		Version: Version,
-		Commit:  Commit,
-		Date:    Date,
+		"Version": Version,
+		"Commit":  Commit,
+		"Date":    Date,
 	}).Info("Docker Hub Pull Limits Exporter")
 
 	if version {
