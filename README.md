@@ -3,6 +3,8 @@
 DockerHub is now rate-limiting image pulls. This is a simple prometheus 
 exporter that will help you monitor your DockerHub limits.
 
+You can read more about this in [dev.to](https://dev.to/jadolg/monitoring-docker-hub-limits-with-prometheus-1647)
+
 ## Usage
 
 ### Create a config file
