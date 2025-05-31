@@ -30,6 +30,8 @@ jobs:
   docker:
     name: Build and push Docker image
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
       - name: Set up Docker Buildx
