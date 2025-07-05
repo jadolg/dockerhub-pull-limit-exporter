@@ -24,7 +24,12 @@ func getToken(username, password string, timeout time.Duration) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Println("Error closing response body:", err)
+		}
+	}(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		return "", fmt.Errorf("failed to fetch token: status code %d", resp.StatusCode)
@@ -61,7 +66,12 @@ func getLimits(token string, timeout time.Duration) (int, int, int, int, string,
 	if err != nil {
 		return 0, 0, 0, 0, "", err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		err := Body.Close()
+		if err != nil {
+			fmt.Println("Error closing response body:", err)
+		}
+	}(resp.Body)
 
 	if resp.StatusCode != http.StatusOK {
 		return 0, 0, 0, 0, "", fmt.Errorf("failed to fetch limits: status code %d", resp.StatusCode)
