@@ -67,4 +67,11 @@ groups:
           severity: critical
         annotations:
           summary: "Account {{ $labels.account }} has used 100% of its pull limit"
+      - alert: DockerHubLimitsExporterError
+        expr: increase(dockerhub_pull_errors_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "The DockerHub limits exporter at {{ $labels.instance }} is experiencing errors"
 ```
