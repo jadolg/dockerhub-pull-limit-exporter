@@ -2,10 +2,11 @@ package main
 
 import (
 	"flag"
-	log "github.com/sirupsen/logrus"
-	"golang.org/x/term"
 	"os"
 	"time"
+
+	log "github.com/sirupsen/logrus"
+	"golang.org/x/term"
 )
 
 var (
