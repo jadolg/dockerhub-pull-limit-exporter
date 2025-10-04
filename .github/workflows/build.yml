@@ -29,20 +29,3 @@ jobs:
         DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
         DOCKERHUB_PASSWORD: ${{ secrets.DOCKERHUB_PASSWORD }}
 
-  docker:
-    name: Build and push Docker image
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v5
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Build
-        uses: docker/build-push-action@v6
-        with:
-          tags: dockerhub-pull-limit-exporter:test
-          platforms: linux/amd64,linux/arm64
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
