@@ -15,4 +15,18 @@ func TestGetConfig(t *testing.T) {
 			t.Fatalf("Expected non-empty username and password, got %s and %s", cred.Username, cred.Password)
 		}
 	}
+
+	if config.Credentials[0].Username != "user1" {
+		t.Fatalf("Expected username to be 'user1', got '%s'", config.Credentials[0].Username)
+	}
+	if config.Credentials[0].Password != "password1" {
+		t.Fatalf("Expected password to be 'password1', got '%s'", config.Credentials[0].Password)
+	}
+
+	if config.Credentials[2].Username != "user001" {
+		t.Fatalf("Expected username to be 'user001', got '%s'", config.Credentials[2].Username)
+	}
+	if config.Credentials[2].Password != "asimplepassword" {
+		t.Fatalf("Expected password to be 'asimplepassword', got '%s'", config.Credentials[2].Password)
+	}
 }
