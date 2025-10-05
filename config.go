@@ -52,7 +52,7 @@ func getConfig(configFile string) (configuration, error) {
 
 	for _, credential := range c.Credentials {
 		if credential.invalid() {
-			return configuration{}, fmt.Errorf("invalid credentials configuration detected %+v", credential)
+			return configuration{}, fmt.Errorf("invalid credentials configuration detected for user %s", credential.Username)
 		}
 	}
 
