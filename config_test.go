@@ -16,17 +16,22 @@ func TestGetConfig(t *testing.T) {
 		}
 	}
 
-	if config.Credentials[0].Username != "user1" {
-		t.Fatalf("Expected username to be 'user1', got '%s'", config.Credentials[0].Username)
+	tests := []struct {
+		username string
+		password string
+	}{
+		{"user1", "password1"},
+		{"user2", "password2"},
+		{"user001", "asimplepassword"},
+		{"user002", "anothersimplepassword"},
 	}
-	if config.Credentials[0].Password != "password1" {
-		t.Fatalf("Expected password to be 'password1', got '%s'", config.Credentials[0].Password)
-	}
-
-	if config.Credentials[2].Username != "user001" {
-		t.Fatalf("Expected username to be 'user001', got '%s'", config.Credentials[2].Username)
-	}
-	if config.Credentials[2].Password != "asimplepassword" {
-		t.Fatalf("Expected password to be 'asimplepassword', got '%s'", config.Credentials[2].Password)
+	for i, tt := range tests {
+		cred := config.Credentials[i]
+		if cred.Username != tt.username {
+			t.Fatalf("Expected username to be '%s', got '%s'", tt.username, cred.Username)
+		}
+		if cred.Password != tt.password {
+			t.Fatalf("Expected password to be '%s', got '%s'", tt.password, cred.Password)
+		}
 	}
 }

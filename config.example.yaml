@@ -8,4 +8,5 @@ credentials:
     password: password2
 
 config_files:
-  - ./config.example.json
+  - ./dockerconfigauth.example.json
+  - ./dockerconfiguserpassword.example.json

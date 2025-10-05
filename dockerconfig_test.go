@@ -45,6 +45,20 @@ func TestGetCredentialsFromDockerConfig(t *testing.T) {
 			wantErr:  "",
 		},
 		{
+			name: "When a valid config with username and password is passed then the correct credentials are returned",
+			config: `{
+				"auths": {
+					"https://index.docker.io/v1/": {
+						"username": "` + username + `",
+						"password": "` + password + `"
+					}
+				}
+			}`,
+			wantUser: username,
+			wantPass: password,
+			wantErr:  "",
+		},
+		{
 			name:    "When no auths are present then an error is returned",
 			config:  `{"auths":{}}`,
 			wantErr: "no auth config found for registry: https://index.docker.io/v1/",

@@ -24,7 +24,9 @@ func getCredentialsFromDockerConfig(configPath string) (string, string, error) {
 	}(configFile)
 	var config struct {
 		Auths map[string]struct {
-			Auth string `json:"auth"`
+			Auth     string `json:"auth"`
+			Username string `json:"username"`
+			Password string `json:"password"`
 		} `json:"auths"`
 	}
 	bytes, err := io.ReadAll(configFile)
@@ -40,14 +42,24 @@ func getCredentialsFromDockerConfig(configPath string) (string, string, error) {
 	if !ok {
 		return "", "", fmt.Errorf("no auth config found for registry: %s", registryURL)
 	}
-	decoded, err := base64.StdEncoding.DecodeString(authEntry.Auth)
-	if err != nil {
-		return "", "", err
-	}
-	credentials := strings.SplitN(string(decoded), ":", 2)
-	if len(credentials) != 2 {
-		return "", "", fmt.Errorf("invalid auth format")
+
+	// Try auth (base64) first
+	if authEntry.Auth != "" {
+		decoded, err := base64.StdEncoding.DecodeString(authEntry.Auth)
+		if err != nil {
+			return "", "", err
+		}
+		credentials := strings.SplitN(string(decoded), ":", 2)
+		if len(credentials) != 2 {
+			return "", "", fmt.Errorf("invalid auth format")
+		}
+		return strings.TrimSpace(credentials[0]), strings.TrimSpace(credentials[1]), nil
 	}
 
-	return strings.TrimSpace(credentials[0]), strings.TrimSpace(credentials[1]), nil
+	// Fallback to username/password fields
+	if authEntry.Username != "" && authEntry.Password != "" {
+		return strings.TrimSpace(authEntry.Username), strings.TrimSpace(authEntry.Password), nil
+	}
+
+	return "", "", fmt.Errorf("no valid credentials found for registry: %s", registryURL)
 }
