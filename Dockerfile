@@ -15,7 +15,6 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags  \
     "-X main.Version=$VERSION -X main.Commit=$COMMIT -X main.Date=$(date +%Y-%m-%dT%H:%M:%SZ)"
 
 FROM scratch
-COPY --from=build /etc/passwd /etc/passwd
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /app/dockerhub-pull-limit-exporter /dockerhub-pull-limit-exporter
 USER dockerhub-pull-limit-exporter-user
