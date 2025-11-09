@@ -30,3 +30,31 @@ archives:
         formats: [ zip ]
 snapshot:
   version_template: "{{ incpatch .Version }}-next"
+
+nfpms:
+  - id: dockerhub-pull-limit-exporter
+    package_name: dockerhub-pull-limit-exporter
+    homepage: https://github.com/jadolg/dockerhub-pull-limit-exporter
+    maintainer: Jorge Alberto Díaz Orozco (Akiel) <diazorozcoj@gmail.com>
+    description: |-
+      Prometheus exporter to monitor Docker Hub pull limits
+    license: GPL-3.0
+    formats:
+      - deb
+      - rpm
+    bindir: /usr/bin
+    section: default
+    priority: extra
+    scripts:
+      postinstall: ./packaging/postinstall.sh
+      preremove: ./packaging/preremove.sh
+    contents:
+      - src: ./packaging/config.yaml
+        dst: /etc/dockerhub-pull-limit-exporter/config.yaml
+        type: config|noreplace
+        file_info:
+          mode: 0600
+      - src: ./packaging/dockerhub-pull-limit-exporter.service
+        dst: /etc/systemd/system/dockerhub-pull-limit-exporter.service
+        file_info:
+          mode: 0600
