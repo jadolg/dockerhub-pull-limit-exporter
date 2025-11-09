@@ -88,10 +88,14 @@ func collectMetrics(credential credentials, timeout time.Duration) error {
 		return err
 	}
 
-	pullLimit.WithLabelValues(credential.Username, source).Set(float64(limit))
-	pullRemaining.WithLabelValues(credential.Username, source).Set(float64(remaining))
-	limitWindowSeconds.WithLabelValues(credential.Username, source).Set(float64(limitWindow))
-	remainingWindowSeconds.WithLabelValues(credential.Username, source).Set(float64(remainingWindow))
+	username := credential.Username
+	if credential.Anonymous {
+		username = source
+	}
+	pullLimit.WithLabelValues(username, source).Set(float64(limit))
+	pullRemaining.WithLabelValues(username, source).Set(float64(remaining))
+	limitWindowSeconds.WithLabelValues(username, source).Set(float64(limitWindow))
+	remainingWindowSeconds.WithLabelValues(username, source).Set(float64(remainingWindow))
 
 	return nil
 }
