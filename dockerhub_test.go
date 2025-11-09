@@ -48,6 +48,25 @@ func TestGetLimits(t *testing.T) {
 	t.Logf("Limit: %d, Remaining: %d, Source: %s", limit, remaining, source)
 }
 
+func TestGetLimitsNoUser(t *testing.T) {
+	token, err := getToken("", "", 10*time.Second)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+
+	limit, remaining, limitWindow, remainingWindow, source, err := getLimits(token, 10*time.Second)
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if limit == 0 || remaining == 0 || limitWindow == 0 || remainingWindow == 0 {
+		t.Fatalf("Expected limit and remaining to be non-zero, got %d and %d", limit, remaining)
+	}
+	if source == "" {
+		t.Fatalf("Expected source to be non-empty, got empty string")
+	}
+	t.Logf("Limit: %d, Remaining: %d, Source: %s", limit, remaining, source)
+}
+
 func TestParseLimits(t *testing.T) {
 	tests := []struct {
 		name                    string
