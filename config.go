@@ -13,15 +13,17 @@ type configuration struct {
 	UpdateInterval time.Duration `yaml:"update_interval"`
 	Timeout        time.Duration `yaml:"timeout"`
 	ConfigFiles    []string      `yaml:"config_files"`
+	AllowAnonymous bool          `yaml:"allow_anonymous"`
 }
 
 type credentials struct {
-	Username string `json:"username"`
-	Password string `json:"password"`
+	Username  string `json:"username"`
+	Password  string `json:"password"`
+	Anonymous bool   `json:"anonymous"`
 }
 
 func (c credentials) invalid() bool {
-	return c.Username == "" || c.Password == ""
+	return (c.Username == "" || c.Password == "") && !c.Anonymous
 }
 
 func getConfig(configFile string) (configuration, error) {
@@ -50,9 +52,15 @@ func getConfig(configFile string) (configuration, error) {
 		})
 	}
 
+	if c.AllowAnonymous {
+		c.Credentials = append(c.Credentials, credentials{
+			Anonymous: true,
+		})
+	}
+
 	for _, credential := range c.Credentials {
 		if credential.invalid() {
-			return configuration{}, fmt.Errorf("invalid credentials configuration detected for user %s", credential.Username)
+			return configuration{}, fmt.Errorf("invalid credentials configuration detected for user [%s]", credential.Username)
 		}
 	}
 

@@ -1,5 +1,6 @@
 update_interval: 5m
 timeout: 20s
+allow_anonymous: true
 
 credentials:
   - username: user1

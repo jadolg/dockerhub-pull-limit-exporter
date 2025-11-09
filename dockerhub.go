@@ -17,7 +17,9 @@ func getToken(username, password string, timeout time.Duration) (string, error) 
 	if err != nil {
 		return "", err
 	}
-	req.SetBasicAuth(username, password)
+	if username != "" && password != "" {
+		req.SetBasicAuth(username, password)
+	}
 
 	client := &http.Client{Timeout: timeout}
 	resp, err := client.Do(req)
