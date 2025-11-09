@@ -1,6 +1,6 @@
 # A prometheus exporter to monitor your DockerHub limits
 
-DockerHub is now rate-limiting image pulls. This is a simple prometheus 
+DockerHub is now rate-limiting image pulls. This is a simple prometheus
 exporter that will help you monitor your DockerHub limits.
 
 You can read more about this in [dev.to](https://dev.to/jadolg/monitoring-docker-hub-limits-with-prometheus-1647)
@@ -8,6 +8,7 @@ You can read more about this in [dev.to](https://dev.to/jadolg/monitoring-docker
 ## Usage
 
 ### Create a config file
+
 Create a `config.yaml` file. Feel free to copy from `config.example.yaml` and modify it to your needs.
 
 ### Run the exporter
@@ -34,7 +35,25 @@ services:
       - ./config.yaml:/config.yaml
 ```
 
+#### Install as deb or rpm package
+
+You can also install the exporter as a deb or rpm package. You can find the latest releases on the releases page.
+
+```bash
+sudo dpkg -i dockerhub-pull-limit-exporter.deb
+# or
+sudo rpm -i dockerhub-pull-limit-exporter.rpm
+```
+
+This installs the exporter as a systemd service. You can modify the config file at
+`/etc/dockerhub-pull-limit-exporter/config.yaml` and then restart the service:
+
+```bash
+sudo systemctl restart dockerhub-pull-limit-exporter
+```
+
 ## Available metrics
+
 - The rate limit for DockerHub pulls: `dockerhub_pull_limit_total`
 - The remaining DockerHub pulls: `dockerhub_pull_remaining_total`
 - The time window in seconds to which the limit applies: `dockerhub_pull_limit_window_seconds`
@@ -43,7 +62,8 @@ services:
 
 ## Grafana Dashboard
 
-Either import the JSON file from `grafana/` or use the following link to import it directly into Grafana: https://grafana.com/grafana/dashboards/23342-dockerhub-pull-limits/
+Either import the JSON file from `grafana/` or use the following link to import it directly into
+Grafana: https://grafana.com/grafana/dashboards/23342-dockerhub-pull-limits/
 
 ![Grafana Dashboard](./grafana/screenshot.png)
 
@@ -54,7 +74,7 @@ groups:
   - name: DockerHubPullLimits
     rules:
       - alert: DockerHubPullsRemainingLow
-        expr: dockerhub_pull_remaining_total/dockerhub_pull_limit_total * 100 < 10 
+        expr: dockerhub_pull_remaining_total/dockerhub_pull_limit_total * 100 < 10
         for: 5m
         labels:
           severity: warning
