@@ -1,0 +1,13 @@
+[Unit]
+Description=Prometheus exporter to monitor Docker Hub pull limits
+After=syslog.target network.target
+
+[Service]
+User=root
+ExecStart=/usr/bin/dockerhub-pull-limit-exporter -config /etc/dockerhub-pull-limit-exporter/config.yaml
+Restart=always
+StandardError=append:/var/log/dockerhub-pull-limit-exporter.log
+StandardOutput=append:/var/log/dockerhub-pull-limit-exporter.log
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,3 @@
+update_interval: 1m
+timeout: 20s
+allow_anonymous: true
