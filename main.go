@@ -58,7 +58,7 @@ func main() {
 				log.WithFields(log.Fields{
 					"username": credential.Username,
 				}).Debug("Collecting metrics")
-				err := collectMetrics(credential, config.Timeout)
+				err := collectMetrics(credential, config.Timeout, config.AnonymousAlias)
 				if err != nil {
 					log.WithFields(log.Fields{
 						"username": credential.Username,
@@ -78,7 +78,7 @@ func main() {
 	}
 }
 
-func collectMetrics(credential credentials, timeout time.Duration) error {
+func collectMetrics(credential credentials, timeout time.Duration, anonymousAlias string) error {
 	token, err := getToken(credential.Username, credential.Password, timeout)
 	if err != nil {
 		return err
@@ -90,7 +90,11 @@ func collectMetrics(credential credentials, timeout time.Duration) error {
 
 	username := credential.Username
 	if credential.Anonymous {
-		username = source
+		if anonymousAlias != "" {
+			username = anonymousAlias
+		} else {
+			username = source
+		}
 	}
 	pullLimit.WithLabelValues(username, source).Set(float64(limit))
 	pullRemaining.WithLabelValues(username, source).Set(float64(remaining))

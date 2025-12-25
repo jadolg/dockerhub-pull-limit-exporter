@@ -14,6 +14,7 @@ type configuration struct {
 	Timeout        time.Duration `yaml:"timeout"`
 	ConfigFiles    []string      `yaml:"config_files"`
 	AllowAnonymous bool          `yaml:"allow_anonymous"`
+	AnonymousAlias string        `yaml:"anonymous_alias"`
 }
 
 type credentials struct {
