@@ -17,5 +17,10 @@ RUN CGO_ENABLED=0 GOOS=linux go build -ldflags  \
 FROM scratch
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /app/dockerhub-pull-limit-exporter /dockerhub-pull-limit-exporter
+COPY --from=build /etc/passwd /etc/passwd
 USER dockerhub-pull-limit-exporter-user
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD ["/dockerhub-pull-limit-exporter", "--healthcheck"]
+
 CMD ["/dockerhub-pull-limit-exporter"]

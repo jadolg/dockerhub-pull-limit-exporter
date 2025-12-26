@@ -2,6 +2,8 @@ package main
 
 import (
 	"flag"
+	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -20,16 +22,26 @@ func main() {
 	var configFile string
 	var logLevel string
 	var version bool
+	var healthcheck bool
 
 	flag.IntVar(&port, "port", 9101, "Port to listen on")
 	flag.StringVar(&configFile, "config", "config.yaml", "Path to config file")
 	flag.StringVar(&logLevel, "loglevel", "info", "Log level")
 	flag.BoolVar(&version, "version", false, "prints version and exits")
+	flag.BoolVar(&healthcheck, "healthcheck", false, "performs a healthcheck to the running service and exits")
 	flag.Parse()
 
 	err := configureLogs(logLevel)
 	if err != nil {
 		log.Fatal(err)
+	}
+
+	if healthcheck {
+		resp, err := http.Get(fmt.Sprintf("http://localhost:%d/health", port))
+		if err != nil || resp.StatusCode != 200 {
+			os.Exit(1)
+		}
+		os.Exit(0)
 	}
 
 	log.WithFields(log.Fields{
