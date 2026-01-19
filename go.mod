@@ -4,7 +4,7 @@ go 1.25
 
 require (
 	github.com/prometheus/client_golang v1.23.2
-	github.com/sirupsen/logrus v1.9.3
+	github.com/sirupsen/logrus v1.9.4
 	golang.org/x/term v0.39.0
 	gopkg.in/yaml.v3 v3.0.1
 )
