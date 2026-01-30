@@ -52,6 +52,14 @@ This installs the exporter as a systemd service. You can modify the config file 
 sudo systemctl restart dockerhub-pull-limit-exporter
 ```
 
+##### Install from our deb repository.
+
+```bash
+wget -O - https://deb.akiel.dev/gpg.pub.key | gpg --dearmor | sudo tee /etc/apt/trusted.gpg.d/akiel.gpg > /dev/null
+sudo apt-add-repository deb "https://deb.akiel.dev/ all main"
+sudo apt install dockerhub-pull-limit-exporter
+```
+
 ## Available metrics
 
 - The rate limit for DockerHub pulls: `dockerhub_pull_limit_total`
