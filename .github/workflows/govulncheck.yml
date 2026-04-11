@@ -30,40 +30,86 @@ jobs:
         run: go install golang.org/x/vuln/cmd/govulncheck@latest
 
       - name: Run govulncheck
-        id: govulncheck
-        continue-on-error: true
-        run: govulncheck -format json -scan package ./... > govulncheck_output.json
+        # govulncheck exits 0 even for fixable stdlib vulns; we always parse the JSON ourselves.
+        run: govulncheck -format json -scan package ./... > govulncheck_output.json || true
 
-      - name: Update vulnerable non-stdlib dependencies
-        if: steps.govulncheck.outcome == 'failure'
+      - name: Analyse findings and update dependencies
         id: update_deps
         run: |
-          # Extract module paths from findings.
-          # govulncheck sets module to "stdlib" for standard library vulnerabilities.
-          VULNERABLE_MODULES=$(jq -r '
-            select(.finding != null)
-            | .finding.trace[0]
-            | select(.module != null and .module != "" and .module != "stdlib")
-            | .module
-          ' govulncheck_output.json | sort -u)
+          # Count unique vulnerabilities (by OSV id) across all findings
+          TOTAL=$(jq -r 'select(.finding != null) | .finding.osv' govulncheck_output.json | sort -u | wc -l | tr -d ' ')
 
-          if [ -z "$VULNERABLE_MODULES" ]; then
-            echo "Only stdlib vulnerabilities found — a Go version bump is needed. Skipping auto-PR."
+          if [ "$TOTAL" -eq 0 ]; then
+            echo "No vulnerabilities found."
+            echo "has_findings=false" >> "$GITHUB_OUTPUT"
             echo "has_updates=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
 
-          echo "Non-stdlib vulnerable modules:"
-          echo "$VULNERABLE_MODULES"
+          echo "Found $TOTAL unique vulnerability/vulnerabilities."
+          echo "has_findings=true" >> "$GITHUB_OUTPUT"
 
-          while IFS= read -r module; do
-            echo "Updating $module ..."
-            go get "${module}@latest"
-          done <<< "$VULNERABLE_MODULES"
+          # Highest fixed_version for stdlib findings (field is fixed_version, not fix_version)
+          STDLIB_FIX=$(jq -r '
+            select(.finding != null)
+            | .finding
+            | select(.trace[0].module == "stdlib" and .fixed_version != null)
+            | .fixed_version
+          ' govulncheck_output.json | sort -V | tail -1)
 
-          go mod tidy
+          # Fixable non-stdlib modules
+          NON_STDLIB=$(jq -r '
+            select(.finding != null)
+            | .finding
+            | select(
+                .fixed_version != null
+                and .trace[0].module != null
+                and .trace[0].module != ""
+                and .trace[0].module != "stdlib"
+              )
+            | .trace[0].module
+          ' govulncheck_output.json | sort -u)
+
+          if [ -z "$STDLIB_FIX" ] && [ -z "$NON_STDLIB" ]; then
+            echo "Vulnerabilities found but no fixes are available yet."
+            echo "has_updates=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          SUMMARY=""
+
+          # --- Bump Go version in go.mod (and Dockerfile if minor changed) ---
+          if [ -n "$STDLIB_FIX" ]; then
+            GO_VERSION="${STDLIB_FIX#v}"   # v1.26.2 → 1.26.2
+            CURRENT_GO=$(go env GOVERSION | sed 's/^go//')   # go1.26.1 → 1.26.1
+            echo "Updating Go from ${CURRENT_GO} to ${GO_VERSION} ..."
+
+            CURRENT_MINOR=$(echo "$CURRENT_GO" | cut -d. -f1,2)   # 1.26
+            NEW_MINOR=$(echo "$GO_VERSION" | cut -d. -f1,2)        # 1.26
+
+            go get "go@${GO_VERSION}"
+
+            # Update Dockerfile only when the major.minor changes (patch is floating in the tag)
+            if [ "$CURRENT_MINOR" != "$NEW_MINOR" ] && [ -f Dockerfile ]; then
+              sed -i "s/golang:${CURRENT_MINOR}-/golang:${NEW_MINOR}-/g" Dockerfile
+              echo "Updated Dockerfile: golang:${CURRENT_MINOR}-* → golang:${NEW_MINOR}-*"
+            fi
+
+            SUMMARY="Go ${CURRENT_GO} → ${GO_VERSION} (stdlib security fix)"
+          fi
+
+          # --- Bump vulnerable third-party modules ---
+          if [ -n "$NON_STDLIB" ]; then
+            while IFS= read -r module; do
+              echo "Updating $module ..."
+              go get "${module}@latest"
+            done <<< "$NON_STDLIB"
+            SUMMARY="${SUMMARY:+${SUMMARY}, }modules: $(echo "$NON_STDLIB" | tr '\n' ' ' | sed 's/ $//')"
+          fi
+
+          GOTOOLCHAIN=local go mod tidy
           echo "has_updates=true" >> "$GITHUB_OUTPUT"
-          echo "vulnerable_modules=$(echo "$VULNERABLE_MODULES" | tr '\n' ' ' | sed 's/ $//')" >> "$GITHUB_OUTPUT"
+          echo "summary=${SUMMARY}" >> "$GITHUB_OUTPUT"
 
       - name: Create Pull Request
         if: steps.update_deps.outputs.has_updates == 'true'
@@ -71,19 +117,14 @@ jobs:
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "fix: update Go dependencies with known security vulnerabilities"
-          title: "fix: update Go dependencies with known security vulnerabilities"
+          commit-message: "fix: update dependencies to resolve security vulnerabilities"
+          title: "fix: update dependencies to resolve security vulnerabilities"
           body: |
             This PR was automatically created by the **govulncheck** workflow.
 
-            One or more third-party Go module dependencies have known security vulnerabilities.
-            The modules listed below were updated to their latest available version:
+            **Changes:** ${{ steps.update_deps.outputs.summary }}
 
-            ```
-            ${{ steps.update_deps.outputs.vulnerable_modules }}
-            ```
-
-            Please review the dependency changes and merge when ready.
+            Please review and merge when ready.
           branch: fix/vulnerable-dependencies
           delete-branch: true
           labels: security
@@ -100,10 +141,10 @@ jobs:
 
           A fix PR has been **${FIX_PR_OP}**: ${FIX_PR_URL}
 
-          It updates the affected modules to their latest versions. Please review and merge it (or rebase your branch on top of it) before merging this PR."
+          It updates the affected modules/Go version to resolve the vulnerabilities. Please review and merge it (or rebase your branch on top of it) before merging this PR."
 
       - name: Fail if vulnerabilities found
-        if: steps.govulncheck.outcome == 'failure'
+        if: steps.update_deps.outputs.has_findings == 'true'
         run: |
-          echo "govulncheck found vulnerabilities. See output above for details."
+          echo "govulncheck found vulnerabilities. See the analysis step above for details."
           exit 1
