@@ -32,10 +32,10 @@ jobs:
       - name: Run govulncheck
         id: govulncheck
         continue-on-error: true
-        run: govulncheck -format json -scan module ./... > govulncheck_output.json
+        run: govulncheck -format json -scan package ./... > govulncheck_output.json
 
       - name: Update vulnerable non-stdlib dependencies
-        if: steps.govulncheck.outcome == 'failure' && github.event_name != 'pull_request'
+        if: steps.govulncheck.outcome == 'failure'
         id: update_deps
         run: |
           # Extract module paths from findings.
@@ -67,6 +67,7 @@ jobs:
 
       - name: Create Pull Request
         if: steps.update_deps.outputs.has_updates == 'true'
+        id: create_pr
         uses: peter-evans/create-pull-request@v7
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -86,6 +87,20 @@ jobs:
           branch: fix/vulnerable-dependencies
           delete-branch: true
           labels: security
+
+      - name: Comment on PR about fix
+        if: steps.create_pr.outputs.pull-request-operation != '' && github.event_name == 'pull_request'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          FIX_PR_URL: ${{ steps.create_pr.outputs.pull-request-url }}
+          FIX_PR_OP: ${{ steps.create_pr.outputs.pull-request-operation }}
+        run: |
+          gh pr comment "${{ github.event.pull_request.number }}" --body \
+            ":warning: **Security vulnerabilities found in Go dependencies**
+
+          A fix PR has been **${FIX_PR_OP}**: ${FIX_PR_URL}
+
+          It updates the affected modules to their latest versions. Please review and merge it (or rebase your branch on top of it) before merging this PR."
 
       - name: Fail if vulnerabilities found
         if: steps.govulncheck.outcome == 'failure'
