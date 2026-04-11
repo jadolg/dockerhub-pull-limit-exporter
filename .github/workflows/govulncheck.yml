@@ -31,21 +31,19 @@ jobs:
 
       - name: Run govulncheck
         id: govulncheck
-        run: |
-          set +e
-          govulncheck -json ./... > govulncheck_output.json
-          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
-          set -e
+        continue-on-error: true
+        run: govulncheck -format json -scan module ./... > govulncheck_output.json
 
       - name: Update vulnerable non-stdlib dependencies
-        if: steps.govulncheck.outputs.exit_code != '0' && github.event_name != 'pull_request'
+        if: steps.govulncheck.outcome == 'failure' && github.event_name != 'pull_request'
         id: update_deps
         run: |
-          # Extract module paths from findings. stdlib vulns have an empty module field.
+          # Extract module paths from findings.
+          # govulncheck sets module to "stdlib" for standard library vulnerabilities.
           VULNERABLE_MODULES=$(jq -r '
             select(.finding != null)
             | .finding.trace[0]
-            | select(.module != null and .module != "")
+            | select(.module != null and .module != "" and .module != "stdlib")
             | .module
           ' govulncheck_output.json | sort -u)
 
@@ -65,7 +63,6 @@ jobs:
 
           go mod tidy
           echo "has_updates=true" >> "$GITHUB_OUTPUT"
-          # Store the list for the PR body (newlines → comma-separated)
           echo "vulnerable_modules=$(echo "$VULNERABLE_MODULES" | tr '\n' ' ' | sed 's/ $//')" >> "$GITHUB_OUTPUT"
 
       - name: Create Pull Request
@@ -91,7 +88,7 @@ jobs:
           labels: security
 
       - name: Fail if vulnerabilities found
-        if: steps.govulncheck.outputs.exit_code != '0'
+        if: steps.govulncheck.outcome == 'failure'
         run: |
           echo "govulncheck found vulnerabilities. See output above for details."
           exit 1
