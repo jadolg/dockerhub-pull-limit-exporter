@@ -6,7 +6,7 @@ on:
       - main
   pull_request:
   schedule:
-    - cron: 0 19 * * 5 
+    - cron: 0 19 * * 5
 
 permissions:
   contents: read
@@ -15,13 +15,83 @@ jobs:
   govulncheck:
     runs-on: ubuntu-latest
     name: Run govulncheck
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v6
 
-      - id: govulncheck
-        uses: golang/govulncheck-action@v1
+      - name: Set up Go
+        uses: actions/setup-go@v5
         with:
-          repo-checkout: false
           go-version-file: go.mod
-          go-version-input: ""
-          go-package: ./...
+
+      - name: Install govulncheck
+        run: go install golang.org/x/vuln/cmd/govulncheck@latest
+
+      - name: Run govulncheck
+        id: govulncheck
+        run: |
+          set +e
+          govulncheck -json ./... > govulncheck_output.json
+          echo "exit_code=$?" >> "$GITHUB_OUTPUT"
+          set -e
+
+      - name: Update vulnerable non-stdlib dependencies
+        if: steps.govulncheck.outputs.exit_code != '0' && github.event_name != 'pull_request'
+        id: update_deps
+        run: |
+          # Extract module paths from findings. stdlib vulns have an empty module field.
+          VULNERABLE_MODULES=$(jq -r '
+            select(.finding != null)
+            | .finding.trace[0]
+            | select(.module != null and .module != "")
+            | .module
+          ' govulncheck_output.json | sort -u)
+
+          if [ -z "$VULNERABLE_MODULES" ]; then
+            echo "Only stdlib vulnerabilities found — a Go version bump is needed. Skipping auto-PR."
+            echo "has_updates=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "Non-stdlib vulnerable modules:"
+          echo "$VULNERABLE_MODULES"
+
+          while IFS= read -r module; do
+            echo "Updating $module ..."
+            go get "${module}@latest"
+          done <<< "$VULNERABLE_MODULES"
+
+          go mod tidy
+          echo "has_updates=true" >> "$GITHUB_OUTPUT"
+          # Store the list for the PR body (newlines → comma-separated)
+          echo "vulnerable_modules=$(echo "$VULNERABLE_MODULES" | tr '\n' ' ' | sed 's/ $//')" >> "$GITHUB_OUTPUT"
+
+      - name: Create Pull Request
+        if: steps.update_deps.outputs.has_updates == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "fix: update Go dependencies with known security vulnerabilities"
+          title: "fix: update Go dependencies with known security vulnerabilities"
+          body: |
+            This PR was automatically created by the **govulncheck** workflow.
+
+            One or more third-party Go module dependencies have known security vulnerabilities.
+            The modules listed below were updated to their latest available version:
+
+            ```
+            ${{ steps.update_deps.outputs.vulnerable_modules }}
+            ```
+
+            Please review the dependency changes and merge when ready.
+          branch: fix/vulnerable-dependencies
+          delete-branch: true
+          labels: security
+
+      - name: Fail if vulnerabilities found
+        if: steps.govulncheck.outputs.exit_code != '0'
+        run: |
+          echo "govulncheck found vulnerabilities. See output above for details."
+          exit 1
